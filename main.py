@@ -15,9 +15,9 @@ version = 'v2.3'
 prefix = "."
 
 P2Assistant = 854233015475109888
-Poketwo = 716390085896962058
+poketwo = 716390085896962058
 Pokename = 874910942490677270
-authorized_ids = [Pokename, Poketwo, P2Assistant]
+authorized_ids = [Pokename, poketwo, P2Assistant]
 client = commands.Bot(command_prefix=prefix)
 intervals = [3.6, 2.8, 3.0, 3.2, 3.4]
 
@@ -31,29 +31,37 @@ async def on_ready():
     print(f'Created by PlayHard')
     print(f'*'*30)
 
+
+# Define the background task
 @tasks.loop(seconds=random.choice(intervals))
 async def spam():
     channel = client.get_channel(int(spam_id))
-    message_content = ''.join(random.sample(['1','2','3','4','5','6','7','8','9','0'], 7) * 5)
+    if channel is None:
+        print(f"Could not find channel with ID {spam_id}")
+        return
+
+    # Generate a random message
+    message_content = ''.join(random.sample(['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'], 7) * 5)
+    
     try:
         await channel.send(message_content)
     except discord.errors.HTTPException as e:
-        if e.status == 429:  # Check if it's a rate limit error
-            print(f"Rate limit exceeded. Waiting and retrying...")
-            await asyncio.sleep(5)  # Wait for 5 seconds before retrying
+        if e.status == 429:  # Rate limit error
+            print("Rate limit exceeded. Waiting and retrying...")
+            await asyncio.sleep(5)
             await spam()  # Retry sending the message
         else:
             print(f"Error sending message: {e}. Retrying in 60 seconds...")
-            await asyncio.sleep(60)  # Wait for 60 seconds before retrying
+            await asyncio.sleep(60)
             await spam()  # Retry sending the message
     except discord.errors.DiscordServerError as e:
         print(f"Error sending message: {e}. Retrying in 60 seconds...")
-        await asyncio.sleep(60)  # Wait for 60 seconds before the first retry
-        print(f"Retrying...")
+        await asyncio.sleep(60)
         await spam_recursive(channel, message_content, 1)
 
 async def spam_recursive(channel, message_content, attempt):
-    if attempt <= 3:  # Maximum 3 attempts
+    """Handle retries with exponential backoff."""
+    if attempt <= 3:  # Limit retries to 3 attempts
         try:
             await channel.send(message_content)
         except discord.errors.DiscordServerError as e:
@@ -62,12 +70,18 @@ async def spam_recursive(channel, message_content, attempt):
             await spam_recursive(channel, message_content, attempt + 1)
     else:
         print("All attempts failed. Giving up.")
-    
+
+# This function will run before the spam task starts, ensuring the bot is ready
 @spam.before_loop
 async def before_spam():
     await client.wait_until_ready()
-spam.start()
 
+# This event runs when the bot is ready
+@client.event
+async def on_ready():
+    print(f'Logged in as {client.user}')
+    spam.start()  # Start the spam loop after the bot is ready
+    
 def solve(message, file_name):
     hint = []
     for i in range(15, len(message) - 1):
@@ -181,7 +195,7 @@ async def on_message(message):
 
         
     # auto delete caught pokemon
-    if message.author.id == Poketwo:
+    if message.author.id == poketwo:
         content = message.content
         channel = message.channel
 
