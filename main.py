@@ -214,7 +214,7 @@ async def on_message(message):
                 else:
                     try:
                         current_time = time.time()
-                        future_time = current_time + 30
+                        future_time = current_time + 15
                         countdown_message = await channel.send(f'This channel will be deleted <t:{int(future_time)}:R>')
                         await asyncio.sleep(15)
                         await channel.delete()
