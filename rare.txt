@@ -103,7 +103,7 @@ Ting-Lu
 Chi-Yu
 Koraidon
 Miraidon
-Rapid strike urshifu
+Rapid Strike Urshifu
 Santa H. Zorua
 Reindeer Deerling
 Pyjama Minccino
@@ -111,15 +111,60 @@ Okidogi
 Munkidori
 Fezandipiti
 Ogerpon
+Mew
 Wellspring Mask Ogerpon
 Hearthflame Mask Ogerpon
 Cornerstone Mask Ogerpon
+Gouging Fire
+Raging Bolt
+Iron Boulder
+Iron Crown
+Terapagos
+Terastal Terapagos
+Pecharunt
+Zenith Marshadow
 Zygarde Cell
 Zygarde Core
 Zenith Marshadow
 Pirouette Meloetta
 Dada Zarude
-Bloodmoon Ursaluna
-Moon Fairy Mudkip
-Flower Fairy Flabébé
-Fire Fairy Salandit
+Neutral Xerneas
+High-speed Flight Configuration Genesect
+Bug Arceus
+Dark Arceus
+Dragon Arceus
+Electric Arceus
+Fighting Arceus
+Fire Arceus
+Flying Arceus
+Ghost Arceus
+Grass Arceus
+Ground Arceus
+Ice Arceus
+Poison Arceus
+Psychic Arceus
+Rock Arceus
+Steel Arceus
+Water Arceus
+Fairy Arceus
+Bug Silvally
+Dark Silvally
+Dragon Silvally
+Electric Silvally
+Fighting Silvally
+Fire Silvally
+Flying Silvally
+Ghost Silvally
+Grass Silvally
+Ground Silvally
+Ice Silvally
+Poison Silvally
+Psychic Silvally
+Rock Silvally
+Steel Silvally
+Water Silvally
+Fairy Silvally
+Drive Mode Miraidon
+Glide Mode Miraidon
+Sprinting Build Koraidon
+Gliding Build Koraidon

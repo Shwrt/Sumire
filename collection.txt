@@ -518,7 +518,6 @@ Carracosta
 Archen
 Archeops
 Trubbish
-Zorua
 Zoroark
 Minccino
 Cinccino
@@ -605,7 +604,7 @@ Spewpa
 Vivillon
 Litleo
 Pyroar
-Flabébé
+Flabebe
 Floette
 Florges
 Skiddo
@@ -742,6 +741,7 @@ Cramorant
 Arrokuda
 Barraskewda
 Toxel
+Toxtricity
 Sizzlipede
 Clobbopus
 Grapploct
@@ -852,11 +852,27 @@ Clodsire
 Farigiraf
 Dudunsparce
 Kingambit
+Great Tusk
+Scream Tail
+Brute Bonnet
+Flutter Mane
+Slither Wing
+Sandy Shocks
+Iron Treads
+Iron Bundle
+Iron Hands
+Iron Jugulis
+Iron Moth
+Iron Thorns
 Frigibax
 Arctibax
 Baxcalibur
 Gimmighoul
 Gholdengo
+Roaring Moon
+Iron Valiant
+Walking Wake
+Iron Leaves
 Dipplin
 Poltchageist
 Sinistcha
@@ -871,16 +887,8 @@ Sensu Oricorio
 Blue-Striped Basculin
 Red-Striped Basculin
 Harvesting Ledian
-Cooking Chespin
-Nibbling Bunnelby
-Pear Flapple
-Partner Eevee
-Partner Pikachu
 Archaludon
 Hydrapple
-Terapagos
-Terastal Terapagos
-Pecharunt
 Midnight Lycanroc
 Dusk Lycanroc
 Heat Rotom
@@ -892,32 +900,25 @@ Gulping Cramorant
 Gorging Cramorant
 Droopy Tatsugiri
 Stretchy Tatsugiri
+Squawkabilly Forms
 Blue Plumage Squawkabilly
 Yellow Plumage Squawkabilly
 White Plumage Squawkabilly
+Original Magearna
 Noice Face Eiscue
 White-Striped Basculin
 School Wishiwashi
 Blade Aegislash
 Hangry Morpeko
-Zen Darmanitan
 Family of Three Maushold
 Three-Segment Dudunsparce
 Roaming Gimmighoul
 Hero Palafin
-Wellspring Mask Ogerpon
-Hearthflame Mask Ogerpon
-Cornerstone Mask Ogerpon
-Zygarde Cell
-Zygarde Core
-Zenith Marshadow
-Pirouette Meloetta
-Dada Zarude
-Bloodmoon Ursaluna
-Jangmo-o
-Hakamo-o
-Kommo-o
-Rapid Strike Urshifu
+Partner Eevee
+Partner Pikachu
+Midday Lycanroc
+ Farfetch'd
+Flabébé
 Spiky-eared Pichu 
 Vanilla Cream Berry Sweet Alcremie
 Vanilla Cream Love Sweet Alcremie
@@ -930,10 +931,6 @@ Rotom Phone
 Rotom Drone
 East Sea Shellos
 East Sea Gastrodon
-Drive Mode Miraidon
-Glide Mode Miraidon
-Sprinting Build Koraidon
-Gliding Build Koraidon
 Battle Cyclizar
 Ride Cyclizar
 Summer Sawsbuck
@@ -1011,3 +1008,21 @@ La Reine Trim Furfrou
 Kabuki Trim Furfrou
 Pharaoh Trim Furfrou
 Sunshine Cherrim
+Heart Trim Furfrou
+Star Trim Furfrou
+Diamond Trim Furfrou
+Debutante Trim Furfrou
+Matron Trim Furfrou
+Dandy Trim Furfrou
+La Reine Trim Furfrou
+Kabuki Trim Furfrou
+Pharaoh Trim Furfrou
+Red Core Minior
+Orange Core Minior
+Yellow Core Minior
+Green Core Minior
+Blue Core Minior
+Indigo Core Minior
+Violet Core Minior
+Sandy Burmy
+Trash Burmy
