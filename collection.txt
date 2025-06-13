@@ -771,9 +771,6 @@ Dragapult
 Wyrdeer
 Kleavor
 Ursaluna
-Basculegion
-Sneasler
-Overqwil
 Sprigatito
 Floragato
 Meowscarada
@@ -852,27 +849,11 @@ Clodsire
 Farigiraf
 Dudunsparce
 Kingambit
-Great Tusk
-Scream Tail
-Brute Bonnet
-Flutter Mane
-Slither Wing
-Sandy Shocks
-Iron Treads
-Iron Bundle
-Iron Hands
-Iron Jugulis
-Iron Moth
-Iron Thorns
 Frigibax
 Arctibax
 Baxcalibur
 Gimmighoul
 Gholdengo
-Roaring Moon
-Iron Valiant
-Walking Wake
-Iron Leaves
 Dipplin
 Poltchageist
 Sinistcha
@@ -917,15 +898,9 @@ Hero Palafin
 Partner Eevee
 Partner Pikachu
 Midday Lycanroc
- Farfetch'd
+Farfetch'd
 Flabébé
-Spiky-eared Pichu 
-Vanilla Cream Berry Sweet Alcremie
-Vanilla Cream Love Sweet Alcremie
-Vanilla Cream Star Sweet Alcremie
-Vanilla Cream Clover Sweet Alcremie
-Vanilla Cream Flower Sweet Alcremie
-Vanilla Cream Ribbon Sweet Alcremie
+Spiky-eared Pichu
 Rotom Pokédex
 Rotom Phone
 Rotom Drone
