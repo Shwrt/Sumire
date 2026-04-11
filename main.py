@@ -2,6 +2,7 @@ import re
 import os
 import asyncio
 import random
+import unicodedata
 import discord
 print(discord.__version__)
 import time
@@ -67,21 +68,28 @@ load_pokemon_lists()
 # --- Ping detection helpers ---
 
 POKEMON_PATTERNS = [
-    r"^##\s*<:[^:]*:\d+>\s*([a-zA-Z\s.''-]+?)(?:〖[^〖]*〗)?\s*$",
-    r"^##\s*([a-zA-Z\s.''-]+?)\s*<:[^:]*:\d+>(?:〖[^〖]*〗)?\s*$",
-    r"^##\s*([a-zA-Z\s.''-]+?)(?:〖[^〖]*〗)?\s*<:[^:]*:\d+>\s*$",
-    r"^##\s*([a-zA-Z\s.''-]+?)(?:〖[^〖]*〗)?(?:\s|$)",
-    r"##\s*(?:<:[^:]*:\d+>\s*)?([a-zA-Z\s.''-]+?)(?:\s*<:[^:]*:\d+>)?(?:〖[^〖]*〗|【[^】]*】)?\s*$",
-    r"^([a-zA-Z\s.''-]+?)[:]?,?\s*[\d.]+%",
+    r"^##\s*<:[^:]*:\d+>\s*([a-zA-ZÀ-ÿ\s.'':-]+?)(?:〖[^〖]*〗)?\s*$",
+    r"^##\s*([a-zA-ZÀ-ÿ\s.'':-]+?)\s*<:[^:]*:\d+>(?:〖[^〖]*〗)?\s*$",
+    r"^##\s*([a-zA-ZÀ-ÿ\s.'':-]+?)(?:〖[^〖]*〗)?\s*<:[^:]*:\d+>\s*$",
+    r"^##\s*([a-zA-ZÀ-ÿ\s.'':-]+?)(?:〖[^〖]*〗)?$",
+    r"##\s*(?:<:[^:]*:\d+>\s*)?([a-zA-ZÀ-ÿ\s.'':-]+?)(?:\s*<:[^:]*:\d+>)?(?:〖[^〖]*〗|【[^】]*】)?\s*$",
+    r"^([a-zA-ZÀ-ÿ\s.'':-]+?)\s*:\s*[\d.]+%",
+    r"^([a-zA-ZÀ-ÿ\s.''-]+?)[:]?,?\s*[\d.]+%",
     r"<<([^>]+)>>",
     r"\*\*([^*]+)\*\*",
-    r"^([a-zA-Z\s.''-]+)\s*$"
 ]
 
 def extract_text_from_message(message: discord.Message) -> str:
     return message.content.lower()
 
 def extract_pokemon(content: str) -> Optional[str]:
+    # Special case: number% Name format (e.g. "10% Zygarde: 81.139%")
+    m = re.match(r'^(\d+%\s+[a-zA-ZÀ-ÿ\s.\'\':-]+?)(?:\s*:\s*[\d.]+%)', content, re.IGNORECASE)
+    if m:
+        pokemon = m.group(1).strip()
+        if 2 <= len(pokemon) <= 50:
+            return pokemon
+
     for pattern in POKEMON_PATTERNS:
         match = re.search(pattern, content, re.IGNORECASE | re.MULTILINE)
         if match and match.group(1).strip():
@@ -94,7 +102,7 @@ def extract_pokemon(content: str) -> Optional[str]:
             pokemon = re.sub(r'\s+', ' ', pokemon).strip()
 
             if (2 <= len(pokemon) <= 50 and
-                re.match(r"^[a-zA-Z\s.''-]+$", pokemon) and
+                re.match(r"^(\d+%\s+)?[a-zA-ZÀ-ÿ\s.'':-]+$", pokemon) and
                 not re.match(r'^\d+$', pokemon)):
 
                 replacements = {
@@ -179,8 +187,16 @@ async def move_channel(channel: discord.TextChannel, pokemon_name: str, category
     workflow_locks.add(channel.id)
 
     try:
-        sanitized_name = re.sub(r'[^a-z0-9\s-]', '', pokemon_name.lower())
-        sanitized_name = re.sub(r'\s+', '-', sanitized_name).strip('-')[:100] or 'pokemon'
+        # Transliterate accented chars, remove apostrophes, handle special chars
+        _n = unicodedata.normalize('NFD', pokemon_name)
+        _n = ''.join(c for c in _n if unicodedata.category(c) != 'Mn')
+        _n = re.sub(r"[''`]", '', _n)
+        _n = _n.replace('%', 'p')
+        _n = re.sub(r'[.:]', '', _n)
+        _n = _n.lower()
+        _n = re.sub(r'[\s-]+', '-', _n)
+        _n = re.sub(r'[^a-z0-9-]', '', _n)
+        sanitized_name = _n.strip('-')[:100] or 'pokemon'
 
         try:
             await channel.clone(name=channel.name)
@@ -333,28 +349,48 @@ async def on_message(message):
     # Poketwo catch detection — runs in any channel
     if message.author.id == poketwo:
         content = message.content
-        if 'These colors seem unusual...' in content:
-            print("Shiny pokemon detected.")
-            await message.channel.send("Shiny Pokemon detected.")
-        elif 'Gigantamax Factor...' in content:
-            print("Gigantamax Factor detected.")
-            await message.channel.send("Gigantamax Factor detected.")
+
+        # Special catch phrases — no delete
+        special_phrases = [
+            'These colors seem unusual...',
+            'Gigantamax Factor...',
+            '+67 aura',
+            'chat is this real',
+            'In my preppy era',
+            'Let him cook',
+        ]
+
+        if any(phrase.lower() in content.lower() for phrase in special_phrases[:2]):
+            print("Special pokemon detected.")
+            await message.channel.send("Special Pokemon detected!")
         elif 'Congratulations' in content:
-            if 'These colors seem unusual...' not in content and 'Gigantamax Factor...' not in content:
-                if channel and channel.category and channel.category.name.lower() == "spawn channels":
-                    print("Channel not deleted (blacklisted category).")
-                else:
-                    try:
-                        current_time = time.time()
-                        future_time = current_time + 15
-                        await message.channel.send(f'This channel will be deleted <t:{int(future_time)}:R>')
-                        await asyncio.sleep(15)
-                        await message.channel.delete()
-                        print("Channel deleted.")
-                    except discord.errors.NotFound:
-                        print("Channel not found or inaccessible.")
+            # Check for special phrases in catch message
+            has_special = any(phrase.lower() in content.lower() for phrase in special_phrases)
+
+            # Check IVs — extract percentage from catch message
+            iv_match = re.search(r'\(([\d.]+)%\)', content)
+            high_iv = False
+            low_iv = False
+            if iv_match:
+                iv_percent = float(iv_match.group(1))
+                high_iv = iv_percent > 90.0
+                low_iv = iv_percent < 10.0
+
+            if has_special or high_iv or low_iv:
+                reason = "special phrase" if has_special else ("high IV" if high_iv else "low IV")
+                print(f"Channel not deleted ({reason}).")
+            elif channel and channel.category and channel.category.name.lower() == "spawn channels":
+                print("Channel not deleted (blacklisted category).")
             else:
-                print("Channel not deleted due to special conditions.")
+                try:
+                    current_time = time.time()
+                    future_time = current_time + 15
+                    await message.channel.send(f'This channel will be deleted <t:{int(future_time)}:R>')
+                    await asyncio.sleep(15)
+                    await message.channel.delete()
+                    print("Channel deleted.")
+                except discord.errors.NotFound:
+                    print("Channel not found or inaccessible.")
         return
 
     # Only do spawn channel logic below this point
