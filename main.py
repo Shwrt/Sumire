@@ -2,7 +2,6 @@ import re
 import os
 import asyncio
 import random
-import unicodedata
 import discord
 print(discord.__version__)
 import time
@@ -19,10 +18,9 @@ prefix = "."
 P2Assistant = 854233015475109888
 poketwo = 716390085896962058
 Pokename = 874910942490677270
-Stellar = 1414290007711154247
 authorized_ids = [Pokename, poketwo, P2Assistant]
 client = commands.Bot(command_prefix=prefix)
-intervals = [15.5,13.3, 16.7, 12.2, 14.4]
+intervals = [3.6, 2.8, 3.0, 3.2, 3.4]
 
 TIMEZONE_CONFIG_FILE = "timezone_config.json"
 timezone_config = {}
@@ -69,28 +67,21 @@ load_pokemon_lists()
 # --- Ping detection helpers ---
 
 POKEMON_PATTERNS = [
-    r"^##\s*<:[^:]*:\d+>\s*([a-zA-ZÀ-ÿ\s.'':-]+?)(?:〖[^〖]*〗)?\s*$",
-    r"^##\s*([a-zA-ZÀ-ÿ\s.'':-]+?)\s*<:[^:]*:\d+>(?:〖[^〖]*〗)?\s*$",
-    r"^##\s*([a-zA-ZÀ-ÿ\s.'':-]+?)(?:〖[^〖]*〗)?\s*<:[^:]*:\d+>\s*$",
-    r"^##\s*([a-zA-ZÀ-ÿ\s.'':-]+?)(?:〖[^〖]*〗)?$",
-    r"##\s*(?:<:[^:]*:\d+>\s*)?([a-zA-ZÀ-ÿ\s.'':-]+?)(?:\s*<:[^:]*:\d+>)?(?:〖[^〖]*〗|【[^】]*】)?\s*$",
-    r"^([a-zA-ZÀ-ÿ\s.'':-]+?)\s*:\s*[\d.]+%",
-    r"^([a-zA-ZÀ-ÿ\s.''-]+?)[:]?,?\s*[\d.]+%",
+    r"^##\s*<:[^:]*:\d+>\s*([a-zA-Z\s.''-]+?)(?:〖[^〖]*〗)?\s*$",
+    r"^##\s*([a-zA-Z\s.''-]+?)\s*<:[^:]*:\d+>(?:〖[^〖]*〗)?\s*$",
+    r"^##\s*([a-zA-Z\s.''-]+?)(?:〖[^〖]*〗)?\s*<:[^:]*:\d+>\s*$",
+    r"^##\s*([a-zA-Z\s.''-]+?)(?:〖[^〖]*〗)?(?:\s|$)",
+    r"##\s*(?:<:[^:]*:\d+>\s*)?([a-zA-Z\s.''-]+?)(?:\s*<:[^:]*:\d+>)?(?:〖[^〖]*〗|【[^】]*】)?\s*$",
+    r"^([a-zA-Z\s.''-]+?)[:]?,?\s*[\d.]+%",
     r"<<([^>]+)>>",
     r"\*\*([^*]+)\*\*",
+    r"^([a-zA-Z\s.''-]+)\s*$"
 ]
 
 def extract_text_from_message(message: discord.Message) -> str:
     return message.content.lower()
 
 def extract_pokemon(content: str) -> Optional[str]:
-    # Special case: number% Name format (e.g. "10% Zygarde: 81.139%")
-    m = re.match(r'^(\d+%\s+[a-zA-ZÀ-ÿ\s.\'\':-]+?)(?:\s*:\s*[\d.]+%)', content, re.IGNORECASE)
-    if m:
-        pokemon = m.group(1).strip()
-        if 2 <= len(pokemon) <= 50:
-            return pokemon
-
     for pattern in POKEMON_PATTERNS:
         match = re.search(pattern, content, re.IGNORECASE | re.MULTILINE)
         if match and match.group(1).strip():
@@ -103,7 +94,7 @@ def extract_pokemon(content: str) -> Optional[str]:
             pokemon = re.sub(r'\s+', ' ', pokemon).strip()
 
             if (2 <= len(pokemon) <= 50 and
-                re.match(r"^(\d+%\s+)?[a-zA-ZÀ-ÿ\s.'':-]+$", pokemon) and
+                re.match(r"^[a-zA-Z\s.''-]+$", pokemon) and
                 not re.match(r'^\d+$', pokemon)):
 
                 replacements = {
@@ -122,7 +113,7 @@ def has_active_users(content: str, message: discord.Message) -> bool:
     if message.role_mentions:
         return True
     active_users = 0
-    monitored_bot_ids = {P2Assistant, poketwo, Pokename, Stellar}
+    monitored_bot_ids = {P2Assistant, poketwo, Pokename}
     for user in message.mentions:
         if user.id in monitored_bot_ids:
             continue
@@ -160,165 +151,6 @@ def get_pokemon_category(pokemon_name: str) -> str:
             return list_name
     return 'collection'
 
-def detect_ping_type_from_text(content: str) -> Optional[str]:
-    # Pokename's message still says e.g. "Regional Ping:" even with no name.
-    match = re.search(r'\b(rare|regional|event|gmax|paradox|collection)\s*ping\b', content, re.IGNORECASE)
-    if match:
-        return match.group(1).lower()
-    return None
-
-def get_fallback_pokemon_name(ping_type: Optional[str]) -> str:
-    fallback_map = {
-        'rare': 'rare-pokemon',
-        'regional': 'regional-pokemon',
-        'event': 'event-pokemon',
-        'collection': 'pokemon',
-    }
-    return fallback_map.get(ping_type, 'pokemon')
-
-STELLAR_CATEGORY_LABELS = {
-    'rare': 'rare',
-    'regional': 'regional',
-    'event': 'event',
-    'gmax': 'gmax',
-    'paradox': 'paradox',
-    'collection': 'collection',
-}
-
-def extract_pokemon_from_stellar(message: discord.Message) -> Optional[tuple]:
-    # Stellar's format:
-    # Azelf<:psycic:1537309231194050562>: 100.00%
-    # Alternative Name: Agnome
-    # Rare: <@&1473801950700245136>
-    lines = message.content.split('\n')
-    if not lines:
-        return None
-
-    name_match = re.match(
-        r"^([a-zA-ZÀ-ÿ0-9\s.%:'\-]+?)<:[^:]*:\d+>:\s*[\d.]+%",
-        lines[0].strip()
-    )
-    if not name_match:
-        return None
-    name = name_match.group(1).strip()
-    if not name:
-        return None
-
-    ping_type = None
-    for line in lines[1:]:
-        label_match = re.match(r'^([A-Za-z]+):\s*<@&\d+>', line.strip())
-        if label_match:
-            label = label_match.group(1).lower()
-            if label in STELLAR_CATEGORY_LABELS:
-                ping_type = STELLAR_CATEGORY_LABELS[label]
-                break
-
-    if not ping_type:
-        return None
-
-    return (name, ping_type)
-
-P2_HINT_PATTERN = r'possible\s+(?:pok[eé]mon|pokemon):\s*([^,\n\r]+)'
-
-def extract_p2_hint_name(content: str) -> Optional[str]:
-    match = re.search(P2_HINT_PATTERN, content, re.IGNORECASE)
-    if match:
-        name = re.sub(r'\s*\([^)]*\).*$', '', match.group(1).strip()).strip()
-        if name and len(name) >= 2:
-            return name
-    return None
-
-async def find_matching_pokemon_name(channel: discord.TextChannel) -> Optional[tuple]:
-    # Used when Pokename's ping message doesn't include a name. Scans for a
-    # Stellar or P2 Assistant message with an extractable name — Stellar is
-    # preferred when present, P2 Assistant is used otherwise.
-    try:
-        await asyncio.sleep(3)
-
-        stellar_result = None
-        p2_result = None
-
-        async for msg in channel.history(limit=10):
-            if msg.author.id == Stellar and stellar_result is None:
-                stellar_result = extract_pokemon_from_stellar(msg)
-            elif msg.author.id == P2Assistant and p2_result is None:
-                hint_name = extract_p2_hint_name(msg.content)
-                if hint_name:
-                    p2_result = (hint_name, get_pokemon_category(hint_name))
-
-            if stellar_result:
-                break
-
-        return stellar_result or p2_result
-
-    except Exception as e:
-        print(f'find_matching_pokemon_name error: {e}')
-        return None
-
-async def scan_hint_messages(channel: discord.TextChannel, after_message: discord.Message) -> Optional[str]:
-    # Scans messages posted after `after_message` for a P2 Assistant/Pokename
-    # hint-format name, checking both plain text and embeds. Shared by the
-    # manual 'h' trigger and the automatic Pokename-no-name fallback.
-    found_pokemon = None
-    async for hint_msg in channel.history(limit=15):
-        if hint_msg.created_at.timestamp() <= after_message.created_at.timestamp():
-            continue
-        if hint_msg.author.id not in (P2Assistant, Pokename):
-            continue
-
-        hint_text = hint_msg.content
-
-        found_pokemon = extract_p2_hint_name(hint_text)
-
-        if not found_pokemon:
-            match = re.search(r'\*{0,2}1\)\s*([^(*\n]+?)\s*\(\d+(?:\.\d+)?%\)\*{0,2}', hint_text)
-            if match:
-                found_pokemon = match.group(1).strip()
-
-        if not found_pokemon and hint_msg.embeds:
-            for embed in hint_msg.embeds:
-                embed_text = ''
-                if embed.description:
-                    embed_text += embed.description + '\n'
-                for field in embed.fields:
-                    embed_text += field.value + '\n'
-                match = re.search(r'\*{0,2}1\)\s*([^(*\n]+?)\s*\(\d+(?:\.\d+)?%\)\*{0,2}', embed_text)
-                if match:
-                    found_pokemon = match.group(1).strip()
-                    break
-
-        if found_pokemon:
-            break
-
-    return found_pokemon
-
-async def resolve_pname_ping(channel: discord.TextChannel, trigger_message: discord.Message):
-    result = await find_matching_pokemon_name(channel)
-    if result:
-        found_name, found_type = result
-        category_keyword = CATEGORY_KEYWORD_MAP.get(found_type, 'Collection')
-        asyncio.create_task(move_channel(channel, found_name, category_keyword))
-        return
-
-    # Stellar/P2 Assistant scan found nothing — fall back to the same
-    # hint-scan logic the manual 'h' trigger uses.
-    try:
-        found_pokemon = await scan_hint_messages(channel, trigger_message)
-        if found_pokemon:
-            category_key = get_pokemon_category(found_pokemon)
-            category_keyword = CATEGORY_KEYWORD_MAP.get(category_key, 'Collection')
-            asyncio.create_task(move_channel(channel, found_pokemon, category_keyword))
-            return
-    except Exception as e:
-        print(f'resolve_pname_ping hint-scan error: {e}')
-
-    # Nothing found anywhere — fall back to a generic name based on the
-    # ping type Pokename's own message stated (e.g. "Regional Ping:").
-    ping_type = detect_ping_type_from_text(trigger_message.content)
-    fallback_name = get_fallback_pokemon_name(ping_type)
-    category_keyword = CATEGORY_KEYWORD_MAP.get(ping_type, 'Collection')
-    asyncio.create_task(move_channel(channel, fallback_name, category_keyword))
-
 
 # --- Channel workflow ---
 
@@ -347,16 +179,8 @@ async def move_channel(channel: discord.TextChannel, pokemon_name: str, category
     workflow_locks.add(channel.id)
 
     try:
-        # Transliterate accented chars, remove apostrophes, handle special chars
-        _n = unicodedata.normalize('NFD', pokemon_name)
-        _n = ''.join(c for c in _n if unicodedata.category(c) != 'Mn')
-        _n = re.sub(r"[''`]", '', _n)
-        _n = _n.replace('%', 'p')
-        _n = re.sub(r'[.:]', '', _n)
-        _n = _n.lower()
-        _n = re.sub(r'[\s-]+', '-', _n)
-        _n = re.sub(r'[^a-z0-9-]', '', _n)
-        sanitized_name = _n.strip('-')[:100] or 'pokemon'
+        sanitized_name = re.sub(r'[^a-z0-9\s-]', '', pokemon_name.lower())
+        sanitized_name = re.sub(r'\s+', '-', sanitized_name).strip('-')[:100] or 'pokemon'
 
         try:
             await channel.clone(name=channel.name)
@@ -509,48 +333,28 @@ async def on_message(message):
     # Poketwo catch detection — runs in any channel
     if message.author.id == poketwo:
         content = message.content
-
-        # Special catch phrases — no delete
-        special_phrases = [
-            'These colors seem unusual...',
-            'Gigantamax Factor...',
-            '+67 aura',
-            'chat is this real',
-            'In my preppy era',
-            'Let him cook',
-        ]
-
-        if any(phrase.lower() in content.lower() for phrase in special_phrases[:2]):
-            print("Special pokemon detected.")
-            await message.channel.send("Special Pokemon detected!")
+        if 'These colors seem unusual...' in content:
+            print("Shiny pokemon detected.")
+            await message.channel.send("Shiny Pokemon detected.")
+        elif 'Gigantamax Factor...' in content:
+            print("Gigantamax Factor detected.")
+            await message.channel.send("Gigantamax Factor detected.")
         elif 'Congratulations' in content:
-            # Check for special phrases in catch message
-            has_special = any(phrase.lower() in content.lower() for phrase in special_phrases)
-
-            # Check IVs — extract percentage from catch message
-            iv_match = re.search(r'\(([\d.]+)%\)', content)
-            high_iv = False
-            low_iv = False
-            if iv_match:
-                iv_percent = float(iv_match.group(1))
-                high_iv = iv_percent > 90.0
-                low_iv = iv_percent < 10.0
-
-            if has_special or high_iv or low_iv:
-                reason = "special phrase" if has_special else ("high IV" if high_iv else "low IV")
-                print(f"Channel not deleted ({reason}).")
-            elif channel and channel.category and channel.category.name.lower() == "spawn channels":
-                print("Channel not deleted (blacklisted category).")
+            if 'These colors seem unusual...' not in content and 'Gigantamax Factor...' not in content:
+                if channel and channel.category and channel.category.name.lower() == "spawn channels":
+                    print("Channel not deleted (blacklisted category).")
+                else:
+                    try:
+                        current_time = time.time()
+                        future_time = current_time + 15
+                        await message.channel.send(f'This channel will be deleted <t:{int(future_time)}:R>')
+                        await asyncio.sleep(15)
+                        await message.channel.delete()
+                        print("Channel deleted.")
+                    except discord.errors.NotFound:
+                        print("Channel not found or inaccessible.")
             else:
-                try:
-                    current_time = time.time()
-                    future_time = current_time + 15
-                    await message.channel.send(f'This channel will be deleted <t:{int(future_time)}:R>')
-                    await asyncio.sleep(15)
-                    await message.channel.delete()
-                    print("Channel deleted.")
-                except discord.errors.NotFound:
-                    print("Channel not found or inaccessible.")
+                print("Channel not deleted due to special conditions.")
         return
 
     # Only do spawn channel logic below this point
@@ -567,9 +371,6 @@ async def on_message(message):
                 category_key = get_pokemon_category(pokemon)
                 category_keyword = CATEGORY_KEYWORD_MAP.get(category_key, 'Collection')
                 asyncio.create_task(move_channel(channel, pokemon, category_keyword))
-            elif message.author.id == Pokename:
-                # Pokename pinged but didn't include a name — scan Stellar/P2 Assistant for one.
-                asyncio.create_task(resolve_pname_ping(channel, message))
         return
 
     # Manual hint trigger — user types 'h' or '@Pokétwo h' in a spawn channel
@@ -581,7 +382,44 @@ async def on_message(message):
     if is_hint_trigger and message.author.id not in (P2Assistant, Pokename, poketwo):
         try:
             await asyncio.sleep(3)
-            found_pokemon = await scan_hint_messages(message.channel, message)
+            found_pokemon = None
+            async for hint_msg in message.channel.history(limit=15):
+                if hint_msg.created_at.timestamp() <= message.created_at.timestamp():
+                    continue
+                if hint_msg.author.id not in (P2Assistant, Pokename):
+                    continue
+
+                # Check plain text content
+                hint_text = hint_msg.content
+
+                # P2 Assistant hint format
+                match = re.search(r'possible\s+(?:pok[eé]mon|pokemon):\s*([^,\n\r]+)', hint_text, re.IGNORECASE)
+                if match:
+                    found_pokemon = match.group(1).strip()
+                    found_pokemon = re.sub(r'\s*\([^)]*\).*$', '', found_pokemon).strip()
+
+                # Pokename hint format — top result (plain text or bold)
+                if not found_pokemon:
+                    match = re.search(r'\*{0,2}1\)\s*([^(*\n]+?)\s*\(\d+(?:\.\d+)?%\)\*{0,2}', hint_text)
+                    if match:
+                        found_pokemon = match.group(1).strip()
+
+                # Also check embeds
+                if not found_pokemon and hint_msg.embeds:
+                    for embed in hint_msg.embeds:
+                        embed_text = ''
+                        if embed.description:
+                            embed_text += embed.description + '\n'
+                        for field in embed.fields:
+                            embed_text += field.value + '\n'
+                        match = re.search(r'\*{0,2}1\)\s*([^(*\n]+?)\s*\(\d+(?:\.\d+)?%\)\*{0,2}', embed_text)
+                        if match:
+                            found_pokemon = match.group(1).strip()
+                            break
+
+                if found_pokemon:
+                    break
+
             if found_pokemon:
                 category_key = get_pokemon_category(found_pokemon)
                 category_keyword = CATEGORY_KEYWORD_MAP.get(category_key, 'Collection')
